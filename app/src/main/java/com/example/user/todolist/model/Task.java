@@ -5,13 +5,14 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.Editable;
 
+import java.util.Calendar;
 import java.util.Date;
 
 public class Task implements Parcelable {
 
-    private int id;
+    private int id, repeatType;
     private String title, description;
-    private Date date;
+    private long date;
     private Boolean reminder, repeat;
     private int priority;
 
@@ -19,10 +20,12 @@ public class Task implements Parcelable {
         id = in.readInt();
         title = in.readString();
         description = in.readString();
+        date = in.readLong();
         byte tmpReminder = in.readByte();
         reminder = tmpReminder == 0 ? null : tmpReminder == 1;
         byte tmpRepeat = in.readByte();
         repeat = tmpRepeat == 0 ? null : tmpRepeat == 1;
+        repeatType = in.readInt();
         priority = in.readInt();
     }
 
@@ -48,16 +51,12 @@ public class Task implements Parcelable {
         dest.writeInt(id);
         dest.writeString(title);
         dest.writeString(description);
+        dest.writeSerializable(date);
         dest.writeByte((byte) (reminder == null ? 0 : reminder ? 1 : 2));
         dest.writeByte((byte) (repeat == null ? 0 : repeat ? 1 : 2));
+        dest.writeInt(repeatType);
         dest.writeInt(priority);
     }
-
-    private enum RepeatType
-    {
-        DAILY, WEEKLY, MONTHLY
-    }
-
 
     public Task() {
         id = -1;
@@ -88,11 +87,11 @@ public class Task implements Parcelable {
     }
 
     public Date getDate() {
-        return date;
+        return new Date(date);
     }
 
     public void setDate(Date date) {
-        this.date = date;
+        this.date = date.getTime();
     }
 
     public Boolean getReminder() {
@@ -109,6 +108,14 @@ public class Task implements Parcelable {
 
     public void setRepeat(Boolean repeat) {
         this.repeat = repeat;
+    }
+
+    public int getRepeatType() {
+        return repeatType;
+    }
+
+    public void setRepeatType(int repeatType) {
+        this.repeatType = repeatType;
     }
 
     public int getPriority() {

@@ -3,6 +3,7 @@ package com.example.user.todolist.adapter;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,32 +13,65 @@ import com.example.user.todolist.R;
 import com.example.user.todolist.model.Task;
 import com.example.user.todolist.viewHolder.TaskItemViewHolder;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 import java.util.zip.Inflater;
 
 public class TasksRecyclerAdapter extends RecyclerView.Adapter<TaskItemViewHolder> {
     private static final String TAG = "TasksAdapter";
-    public ArrayList<Task> mTasksList;
+    public ArrayList<Task> mTasksList = new ArrayList<>();
+    public  Context mContext;
+    private OnItemSelectedListener mOnItemSelectedListener;
+    public int mSelectedItemPosition;
+
 
     public TasksRecyclerAdapter(Context context) {
         super();
-        mTasksList = new ArrayList<>();
+        mContext = context;
     }
 
     @NonNull
     @Override
     public TaskItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.task_item_rv, parent, false);
-        return new TaskItemViewHolder(view);
+        View view = LayoutInflater.from(mContext).inflate( R.layout.task_item_rv, parent, false);
+        TaskItemViewHolder viewHolder = new TaskItemViewHolder(view);
+        return viewHolder;
     }
 
     @Override
-    public void onBindViewHolder(@NonNull TaskItemViewHolder holder, int position) {
-        Task mTask = mTasksList.get(position);
+    public void onBindViewHolder(@NonNull TaskItemViewHolder holder, final int position) {
+        final Task mTask = mTasksList.get(position);
         holder.mItemTitle.setText(mTask.getTitle());
         holder.mItemDescription.setText(mTask.getDescription());
-        holder.mItemDate.setText(mTask.getDate().toString());
+        Log.v(TAG, "ggggggg = " + mTask.getDate().toString());
+        String myFormat = "dd.MM.yyyy" + "  " + "hh:ss"; //In which you need put here
+        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.getDefault());
+        holder.mItemDate.setText(sdf.format(mTask.getDate().getTime()));
+       //holder.mItemDate.setText(mTask.getDate().toString());
+
+        holder.setmIOnClickListener(new TaskItemViewHolder.IOnClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                if (mOnItemSelectedListener != null) {
+                    mOnItemSelectedListener.onItemSelected(mTask, position);
+                    mSelectedItemPosition = position;
+                }
+            }
+        });
+
+
+        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                mOnItemSelectedListener.onRemove(position);
+                return false;
+            }
+        });
+
     }
+
 
     @Override
     public int getItemCount() {
@@ -49,4 +83,24 @@ public class TasksRecyclerAdapter extends RecyclerView.Adapter<TaskItemViewHolde
         notifyDataSetChanged();
     }
 
+    public void editTask(Task task){
+        mTasksList.set(mSelectedItemPosition, task);
+        notifyDataSetChanged();
+    }
+
+    public void removeTask(int position){
+        mTasksList.remove(position);
+        notifyDataSetChanged();
+    }
+
+    public void setmOnItemSelectedListener(OnItemSelectedListener onItemSelectedListener){
+        mOnItemSelectedListener = onItemSelectedListener;
+    }
+
+
+    public interface OnItemSelectedListener  {
+        void onItemSelected(Task task, int position);
+        void onRemove(int position);
+
+    }
 }
