@@ -1,5 +1,7 @@
 package com.example.user.todolist.fragments;
 
+import android.app.AlertDialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -7,14 +9,18 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.user.todolist.R;
 import com.example.user.todolist.model.Task;
@@ -26,7 +32,6 @@ public class AddEditItemFragment extends Fragment {
     private static final String ARG_TASK = "arg.task";
 
     private Task mTask = new Task();
-    private Button mSaveEditBtn;
     private EditText mItemTitleEditText, mItemDescEditText;
     private TextView mItemDateTextView, mItemTimeTextView, mItemPriorityCount;
     private CheckBox mItemReminderCheckBox, mItemRepeatCheckBox;
@@ -35,8 +40,62 @@ public class AddEditItemFragment extends Fragment {
     private int mPriorityCount = 0;
     private boolean mReminder = false, mRepeat = false;
     Calendar myCalendar = Calendar.getInstance();
+    private boolean mArguments;
+
+    private Menu mMenu;
+    private MenuItem menuItemEdit;
+    private MenuItem menuItemSave;
+    private MenuItem menuItemRemove;
+
 
     public IOnActionListener mIOnActionListener;
+
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_add_edit_item, menu);
+        if(mArguments){
+            menu.getItem(0).setVisible(false);
+            menu.getItem(1).setVisible(true);
+            menu.getItem(2).setVisible(false);
+        } else{
+            menu.getItem(0).setVisible(true);
+            menu.getItem(1).setVisible(false);
+            menu.getItem(2).setVisible(false);
+        }
+
+    }
+
+    @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        menuItemSave = menu.getItem(0);
+        menuItemEdit = menu.getItem(1);
+        menuItemRemove = menu.getItem(2);
+
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.menu_add_edit_item_save:
+                setInfo();
+                return true;
+            case R.id.menu_add_edit_item_edit:
+                item.setVisible(false);
+                menuItemSave.setVisible(true);
+                menuItemRemove.setVisible(true);
+                enableDisableRows(true);
+                return true;
+            case R.id.menu_add_edit_item_remove:
+                //some function call
+                openRemoveDialog();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
 
 
     public static AddEditItemFragment newInstance(Task task) {
@@ -51,15 +110,16 @@ public class AddEditItemFragment extends Fragment {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-        getActivity().setTitle("Add/Edit Item");
+        super.onCreate(savedInstanceState);
+        //getActivity().setTitle("Add/Edit Item");
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_add_edit_item, container, false);
+        inflater.inflate(R.layout.fragment_add_edit_item, container, false);
         return view;
 
     }
@@ -67,47 +127,23 @@ public class AddEditItemFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         init(view);
-        if (savedInstanceState == null){
-            mSaveEditBtn.setText("Save");
-        }
-        else{
-            mSaveEditBtn.setText("Edit");
-
-        }
     }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-
-    }
-
     public void init(View view){
-        mSaveEditBtn = (Button) view.findViewById(R.id.item_save_edit_btn);
-        mItemTitleEditText = (EditText) view.findViewById(R.id.save_edit_item_title);
-        mItemDescEditText = (EditText)view.findViewById(R.id.save_edit_item_description);
-        mItemDateTextView = (TextView) view.findViewById(R.id.save_edit_item_date);
-        mItemTimeTextView = (TextView) view.findViewById(R.id.save_edit_item_time);
-        mItemReminderCheckBox = (CheckBox) view.findViewById(R.id.save_edit_item_reminder);
-        mItemRepeatCheckBox = (CheckBox) view.findViewById(R.id.save_edit_item_repeat);
-        mItemPriorityCount = (TextView) view.findViewById(R.id.save_edit_item_priority_count);
-        mMinusPriorityImageView = (ImageView) view.findViewById(R.id.save_edit_item_counter_minus_iv);
-        mPlusPriorityImageView = (ImageView) view.findViewById(R.id.save_edit_item_counter_plus_iv);
-        mRepeatRadioGroup = (RadioGroup) view.findViewById(R.id.save_edit_item_repeat_radio_group);
+        mItemTitleEditText = view.findViewById(R.id.save_edit_item_title);
+        mItemDescEditText = view.findViewById(R.id.save_edit_item_description);
+        mItemDateTextView = view.findViewById(R.id.save_edit_item_date);
+        mItemTimeTextView = view.findViewById(R.id.save_edit_item_time);
+        mItemReminderCheckBox = view.findViewById(R.id.save_edit_item_reminder);
+        mItemRepeatCheckBox = view.findViewById(R.id.save_edit_item_repeat);
+        mItemPriorityCount = view.findViewById(R.id.save_edit_item_priority_count);
+        mMinusPriorityImageView = view.findViewById(R.id.save_edit_item_counter_minus_iv);
+        mPlusPriorityImageView = view.findViewById(R.id.save_edit_item_counter_plus_iv);
+        mRepeatRadioGroup = view.findViewById(R.id.save_edit_item_repeat_radio_group);
 
+        mItemTitleEditText.requestFocus();
+        final InputMethodManager imm = (InputMethodManager) mItemTitleEditText.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(mItemTitleEditText, InputMethodManager.SHOW_IMPLICIT);
 
-        mSaveEditBtn.setText("Save");
-
-        mSaveEditBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mSaveEditBtn.getText() == "Edit")
-                    mSaveEditBtn.setText("Save");
-                else{
-                    setInfo();
-                }
-            }
-        });
 
         mMinusPriorityImageView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -160,31 +196,46 @@ public class AddEditItemFragment extends Fragment {
     private void initData() {
         Bundle args = getArguments();
         if (args != null && args.containsKey(ARG_TASK) && args.getParcelable(ARG_TASK) != null) {
+            mArguments = true;
             mTask = args.getParcelable(ARG_TASK);
-            mItemTitleEditText.setText(mTask.getTitle());
-            mItemDescEditText.setText(mTask.getDescription());
-            mItemReminderCheckBox.setChecked(mTask.getReminder());
-            mItemRepeatCheckBox.setChecked(mTask.getRepeat());
-            mRepeatRadioGroup.check(mTask.getRepeatType());
-            /*mItemPriorityCount.setText(mTask.getPriority());*/
+            fillData();
+            enableDisableRows(false);
         } else {
+            mArguments = false;
             mTask = new Task();
         }
     }
 
-
-    public void getInfo (Task task){
-        mItemTitleEditText.setText(task.getTitle());
-        mItemDescEditText.setText(task.getDescription());
-        mItemReminderCheckBox.setChecked(task.getReminder());
-        mItemRepeatCheckBox.setChecked(task.getRepeat());
-        mRepeatRadioGroup.check(task.getRepeatType());
-        mItemPriorityCount.setText(task.getPriority());
+    public void fillData(){
+        mItemTitleEditText.setText(mTask.getTitle());
+        mItemDescEditText.setText(mTask.getDescription());
+        mItemReminderCheckBox.setChecked(mTask.getReminder());
+        mItemRepeatCheckBox.setChecked(mTask.getRepeat());
+        mRepeatRadioGroup.check(mTask.getRepeatType());
+        mItemPriorityCount.setText(String.valueOf(mTask.getPriority()));
+        mPriorityCount = mTask.getPriority();
     }
 
     public void setInfo (){
-        mTask.setTitle(mItemTitleEditText.getText().toString());
-        mTask.setDescription(mItemDescEditText.getText().toString());
+        if (mItemTitleEditText.getText().toString().equals("")){
+            Toast toast = Toast.makeText(getContext(),
+                    "Please set a Title!",
+                    Toast.LENGTH_SHORT);
+            toast.show();
+            return;
+        }
+        else
+            mTask.setTitle(mItemTitleEditText.getText().toString());
+
+        if(mItemDescEditText.getText().toString().equals("")){
+            Toast toast = Toast.makeText(getContext(),
+                    "Please set a Description!",
+                    Toast.LENGTH_SHORT);
+            toast.show();
+            return;
+        }
+        else
+            mTask.setDescription(mItemDescEditText.getText().toString());
         mTask.setDate((myCalendar.getTime()));
         mTask.setReminder(mReminder);
         mTask.setRepeat(mRepeat);
@@ -195,12 +246,34 @@ public class AddEditItemFragment extends Fragment {
 
         if (mIOnActionListener != null) {
             mIOnActionListener.onTaskSaved(mTask);
-            Log.v("OOOO", "oooooo = " + mTask.getTitle());
         }
+
+        final InputMethodManager imm1 = (InputMethodManager) mItemTitleEditText.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm1.hideSoftInputFromWindow(mItemTitleEditText.getWindowToken(), 0);
         getActivity().onBackPressed();
     }
 
+    public void enableDisableRows(boolean enableDisable){
+        mItemTitleEditText.setEnabled(enableDisable);
+        mItemDescEditText.setEnabled(enableDisable);
+        mItemDateTextView.setEnabled(enableDisable);
+        mItemReminderCheckBox.setEnabled(enableDisable);
+        mItemRepeatCheckBox.setEnabled(enableDisable);
+        mRepeatRadioGroup.setEnabled(enableDisable);
+        mItemPriorityCount.setEnabled(enableDisable);
+    }
 
+
+    public void openRemoveDialog(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+
+        builder.setTitle("Remove Task");
+
+        builder.setMessage("Are you want to remove this Task?");
+        builder.setPositiveButton("OK", null);
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
 
     public void setmIOnActionListener(IOnActionListener mIOnActionListener) {
         this.mIOnActionListener = mIOnActionListener;

@@ -5,7 +5,10 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateFormat;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -41,7 +44,7 @@ public class TasksRecyclerAdapter extends RecyclerView.Adapter<TaskItemViewHolde
     }
 
     @Override
-    public void onBindViewHolder(@NonNull TaskItemViewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull final TaskItemViewHolder holder, final int position) {
         final Task mTask = mTasksList.get(position);
         holder.mItemTitle.setText(mTask.getTitle());
         holder.mItemDescription.setText(mTask.getDescription());
@@ -61,16 +64,36 @@ public class TasksRecyclerAdapter extends RecyclerView.Adapter<TaskItemViewHolde
             }
         });
 
-
-        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+        holder.itemView.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
             @Override
-            public boolean onLongClick(View v) {
-                mOnItemSelectedListener.onRemove(position);
-                return false;
+            public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+                MenuItem edit = menu.add("Edit");
+                MenuItem remove = menu.add("Remove");
+
             }
         });
 
+/*
+        holder.setmIOnClickListener(new TaskItemViewHolder.IOnClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                if (mOnItemSelectedListener != null) {
+                    mOnItemSelectedListener.onItemSelected(mTask, position);
+                    mSelectedItemPosition = position;
+                }
+            }
+        });
+        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+
+                mOnItemSelectedListener.onRemove(holder.getAdapterPosition());
+                return false;
+            }
+        });
+*/
     }
+
 
 
     @Override
@@ -80,12 +103,12 @@ public class TasksRecyclerAdapter extends RecyclerView.Adapter<TaskItemViewHolde
 
     public void addOrUpdateTask(Task task) {
         mTasksList.add(task);
-        notifyDataSetChanged();
+        notifyItemInserted(mTasksList.size() - 1);
     }
 
     public void editTask(Task task){
         mTasksList.set(mSelectedItemPosition, task);
-        notifyDataSetChanged();
+        notifyItemChanged(mSelectedItemPosition);
     }
 
     public void removeTask(int position){

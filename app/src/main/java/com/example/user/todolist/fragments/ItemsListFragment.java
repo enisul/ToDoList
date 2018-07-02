@@ -50,6 +50,7 @@ public class ItemsListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_items_list, container, false);
+        setHasOptionsMenu(true);
         return view;
     }
 
@@ -95,6 +96,7 @@ public class ItemsListFragment extends Fragment {
         mFragmentTransaction = mFragmentManager.beginTransaction();
         AddEditItemFragment mAddEditItemFragment = AddEditItemFragment.newInstance(task);
         mAddEditItemFragment.setmIOnActionListener(mIOnActionListener);
+        mFragmentTransaction.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
         mFragmentTransaction.add(R.id.fragment_container, mAddEditItemFragment);
         mFragmentTransaction.addToBackStack("AddEditItemFragment");
         mFragmentTransaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
