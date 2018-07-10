@@ -40,8 +40,9 @@ public class ItemsListFragment extends Fragment {
         }
 
         @Override
-        public void onTaskRemoved(Task task) {
+        public void onTaskRemoved(int position) {
 
+            mTaskListAdapter.removeTask(position);
         }
     };
 

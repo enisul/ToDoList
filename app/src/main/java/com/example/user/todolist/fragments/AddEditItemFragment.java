@@ -1,7 +1,10 @@
 package com.example.user.todolist.fragments;
 
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -14,16 +17,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Adapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.example.user.todolist.R;
+import com.example.user.todolist.adapter.TasksRecyclerAdapter;
 import com.example.user.todolist.model.Task;
+import com.example.user.todolist.util.DateUtil;
 
 import java.util.Calendar;
 
@@ -39,7 +47,7 @@ public class AddEditItemFragment extends Fragment {
     private RadioGroup mRepeatRadioGroup;
     private int mPriorityCount = 0;
     private boolean mReminder = false, mRepeat = false;
-    Calendar myCalendar = Calendar.getInstance();
+    private Calendar mSelectedDate = Calendar.getInstance();
     private boolean mArguments;
 
     private Menu mMenu;
@@ -96,6 +104,39 @@ public class AddEditItemFragment extends Fragment {
         }
     }
 
+    DatePickerDialog.OnDateSetListener mOnDateSetListener = new DatePickerDialog.OnDateSetListener() {
+
+        @Override
+        public void onDateSet(DatePicker view, int year, int monthOfYear,
+                              int dayOfMonth) {
+            mSelectedDate.set(Calendar.YEAR, year);
+            mSelectedDate.set(Calendar.MONTH, monthOfYear);
+            mSelectedDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+
+            openTimePicker();
+        }
+    };
+
+    private void openDatePicker() {
+        new DatePickerDialog(getActivity(), mOnDateSetListener, mSelectedDate.get(Calendar.YEAR),
+                mSelectedDate.get(Calendar.MONTH),
+                mSelectedDate.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    private void openTimePicker() {
+        new TimePickerDialog(getActivity(), mOnTimeSetListener, mSelectedDate.get(Calendar.HOUR_OF_DAY),
+                mSelectedDate.get(Calendar.MINUTE), true).show();
+    }
+
+    TimePickerDialog.OnTimeSetListener mOnTimeSetListener = new TimePickerDialog.OnTimeSetListener() {
+        @Override
+        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+            mSelectedDate.set(Calendar.HOUR_OF_DAY, hourOfDay);
+            mSelectedDate.set(Calendar.MINUTE, minute);
+
+            updateDateLabel();
+        }
+    };
 
 
     public static AddEditItemFragment newInstance(Task task) {
@@ -127,6 +168,7 @@ public class AddEditItemFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         init(view);
+        updateDateLabel();
     }
     public void init(View view){
         mItemTitleEditText = view.findViewById(R.id.save_edit_item_title);
@@ -144,6 +186,12 @@ public class AddEditItemFragment extends Fragment {
         final InputMethodManager imm = (InputMethodManager) mItemTitleEditText.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.showSoftInput(mItemTitleEditText, InputMethodManager.SHOW_IMPLICIT);
 
+        mItemDateTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openDatePicker();
+            }
+        });
 
         mMinusPriorityImageView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -236,12 +284,15 @@ public class AddEditItemFragment extends Fragment {
         }
         else
             mTask.setDescription(mItemDescEditText.getText().toString());
-        mTask.setDate((myCalendar.getTime()));
+
+        mTask.setDate((mSelectedDate.getTime()));
         mTask.setReminder(mReminder);
         mTask.setRepeat(mRepeat);
+
         if (mItemRepeatCheckBox.isChecked()) {
             mTask.setRepeatType(mRepeatRadioGroup.getCheckedRadioButtonId());
         }
+
         mTask.setPriority(mPriorityCount);
 
         if (mIOnActionListener != null) {
@@ -263,6 +314,10 @@ public class AddEditItemFragment extends Fragment {
         mItemPriorityCount.setEnabled(enableDisable);
     }
 
+    private void updateDateLabel() {
+        mItemDateTextView.setText(DateUtil.formatDateToLongStyle(mSelectedDate.getTime()));
+    }
+
 
     public void openRemoveDialog(){
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
@@ -270,7 +325,13 @@ public class AddEditItemFragment extends Fragment {
         builder.setTitle("Remove Task");
 
         builder.setMessage("Are you want to remove this Task?");
-        builder.setPositiveButton("OK", null);
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                mIOnActionListener.onTaskRemoved(0);
+                getActivity().onBackPressed();
+            }
+        });
         builder.setNegativeButton("Cancel", null);
         builder.show();
     }
@@ -281,6 +342,6 @@ public class AddEditItemFragment extends Fragment {
 
     public interface IOnActionListener {
         void onTaskSaved(Task task);
-        void onTaskRemoved(Task task);
+        void onTaskRemoved(int position);
     }
 }

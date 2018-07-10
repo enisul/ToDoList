@@ -112,7 +112,7 @@ public class TasksRecyclerAdapter extends RecyclerView.Adapter<TaskItemViewHolde
     }
 
     public void removeTask(int position){
-        mTasksList.remove(position);
+        mTasksList.remove(mSelectedItemPosition);
         notifyDataSetChanged();
     }
 

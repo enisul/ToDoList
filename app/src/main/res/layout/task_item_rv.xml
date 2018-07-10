@@ -8,7 +8,8 @@
     android:layout_margin="@dimen/margin_small"
     android:elevation="4dp"
     android:padding="@dimen/padding_small"
-    android:background="@color/color_recyclerView_item">
+    android:background="@drawable/custom_borders"
+    >
 
     <android.support.v7.widget.AppCompatCheckBox
         android:layout_width="wrap_content"
