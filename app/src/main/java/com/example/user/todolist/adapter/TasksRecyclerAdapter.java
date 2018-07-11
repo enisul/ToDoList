@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.user.todolist.R;
+import com.example.user.todolist.db.DbManager;
 import com.example.user.todolist.model.Task;
 import com.example.user.todolist.viewHolder.TaskItemViewHolder;
 
@@ -27,12 +28,14 @@ public class TasksRecyclerAdapter extends RecyclerView.Adapter<TaskItemViewHolde
     public ArrayList<Task> mTasksList = new ArrayList<>();
     public  Context mContext;
     private OnItemSelectedListener mOnItemSelectedListener;
-    public int mSelectedItemPosition;
-
+    public int mSelectedItemPosition, mSelectedItemId;
+    private DbManager mDbManager;
 
     public TasksRecyclerAdapter(Context context) {
         super();
         mContext = context;
+        mDbManager = new DbManager(mContext);
+        mTasksList.addAll(mDbManager.getTasksList());
     }
 
     @NonNull
@@ -52,7 +55,6 @@ public class TasksRecyclerAdapter extends RecyclerView.Adapter<TaskItemViewHolde
         String myFormat = "dd.MM.yyyy" + "  " + "hh:ss"; //In which you need put here
         SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.getDefault());
         holder.mItemDate.setText(sdf.format(mTask.getDate().getTime()));
-       //holder.mItemDate.setText(mTask.getDate().toString());
 
         holder.setmIOnClickListener(new TaskItemViewHolder.IOnClickListener() {
             @Override
@@ -60,6 +62,7 @@ public class TasksRecyclerAdapter extends RecyclerView.Adapter<TaskItemViewHolde
                 if (mOnItemSelectedListener != null) {
                     mOnItemSelectedListener.onItemSelected(mTask, position);
                     mSelectedItemPosition = position;
+                    mSelectedItemId = mTask.getId();
                 }
             }
         });
@@ -98,20 +101,29 @@ public class TasksRecyclerAdapter extends RecyclerView.Adapter<TaskItemViewHolde
 
     @Override
     public int getItemCount() {
-        return mTasksList.size();
+        return mDbManager.getTasksCount();
+        //return mTasksList.size();
     }
 
     public void addOrUpdateTask(Task task) {
+        // Database  insert new task
+        mDbManager.insertTask(task);
+
         mTasksList.add(task);
         notifyItemInserted(mTasksList.size() - 1);
     }
 
     public void editTask(Task task){
+        // Database update task
+        mDbManager.updateTask(task);
+
         mTasksList.set(mSelectedItemPosition, task);
         notifyItemChanged(mSelectedItemPosition);
     }
 
     public void removeTask(int position){
+        // Database  remove task
+        mDbManager.removeTask(mSelectedItemId);
         mTasksList.remove(mSelectedItemPosition);
         notifyDataSetChanged();
     }
